@@ -1,9 +1,10 @@
-const { Order, CartItem } = require('../models/order');
-const { errorHandler } = require('../helpers/dbErrorHandler');
+const { Order, CartItem } = require("../models/order");
+const { errorHandler } = require("../helpers/dbErrorHandler");
+const sendEmail = require("../middleware/emailService");
 
 exports.orderById = (req, res, next, id) => {
   Order.findById(id)
-    .populate('products.product', 'name price')
+    .populate("products.product", "name price")
     .exec((err, order) => {
       if (err || !order) {
         return res.status(400).json({
@@ -19,20 +20,27 @@ exports.create = (req, res) => {
   // console.log('CREATE ORDER: ', req.body);
   req.body.order.user = req.profile;
   const order = new Order(req.body.order);
+  console.log(order);
   order.save((error, data) => {
     if (error) {
       return res.status(400).json({
         error: errorHandler(error),
       });
     }
+    sendEmail(
+      order.user.email,
+      "Your Order Recipient",
+      `you have to pay ${order.amount}`
+    );
+
     res.json(data);
   });
 };
 
 exports.listOrders = (req, res) => {
   Order.find()
-    .populate('user', '_id name address')
-    .sort('-created')
+    .populate("user", "_id name address")
+    .sort("-created")
     .exec((err, orders) => {
       if (err) {
         return res.status(400).json({
@@ -44,7 +52,7 @@ exports.listOrders = (req, res) => {
 };
 
 exports.getStatusValues = (req, res) => {
-  res.json(Order.schema.path('status').enumValues);
+  res.json(Order.schema.path("status").enumValues);
 };
 
 exports.updateOrderStatus = (req, res) => {

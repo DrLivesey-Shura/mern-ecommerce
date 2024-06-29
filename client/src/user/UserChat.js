@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Box,
-  Button,
-  Input,
-  VStack,
-  HStack,
-  Text,
-  Heading,
-} from "@chakra-ui/react";
-import "../admin/ChatStyle.css";
+import { Box, VStack, HStack, Text } from "@chakra-ui/react";
 import Layout from "../core/Layout";
 
 const ChatComponent = () => {
@@ -17,8 +8,10 @@ const ChatComponent = () => {
   const websocket = useRef(null);
   const jwt = JSON.parse(localStorage.getItem("jwt"));
   const user = jwt.user.username;
-  console.log(user);
+  const messagesEndRef = useRef(null);
+
   useEffect(() => {
+    fetchMessages();
     websocket.current = new WebSocket(`ws://localhost:8000/ws/${user}`);
 
     websocket.current.onopen = () => {
@@ -34,31 +27,59 @@ const ChatComponent = () => {
       console.log("Disconnected from WebSocket");
     };
 
-    fetchMessages();
-
     return () => {
       websocket.current.close();
     };
   }, [user]);
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // useEffect(() => {
+  //   fetchMessages();
+  // }, [messages]);
+
   const fetchMessages = async () => {
-    const response = await fetch(`http://localhost:8000/messages/${user}`);
-    const data = await response.json();
-    setMessages(data);
+    try {
+      const response = await fetch(`http://localhost:8000/messages/${user}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages");
+      }
+      const data = await response.json();
+      setMessages(data);
+    } catch (error) {
+      console.error("Error fetching messages:", error.message);
+    }
   };
 
   const sendMessage = () => {
-    if (inputValue.trim()) {
+    if (inputValue.trim() && websocket.current.readyState === WebSocket.OPEN) {
       const message = {
         recipient: "admin",
         message: inputValue,
       };
       websocket.current.send(JSON.stringify(message));
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { sender: user, recipient: "admin", message: inputValue },
+      ]);
+      websocket.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        setMessages((prevMessages) => [...prevMessages, message]);
+      };
+
       setInputValue("");
     }
   };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <Layout title="Chat" description={""} className="container-fluid">
+    <Layout title="Chat" description="" className="container-fluid">
       <Box
         borderColor="#2980b9"
         boxShadow="0 0 15px rgba(52, 152, 219, 0.5)"
@@ -80,16 +101,6 @@ const ChatComponent = () => {
             maxH="60vh"
           >
             {messages.map((msg, index) => (
-              // <Box
-              //   key={index}
-              //   bg={msg.sender === user ? "blue.100" : "gray.100"}
-              //   p={2}
-              //   borderRadius="md"
-              //   mb={2}
-              // >
-              //   <Text fontWeight="bold">{msg.sender}</Text>
-              //   <Text>{msg.message}</Text>
-              // </Box>
               <HStack
                 key={index}
                 justify={msg.sender === "admin" ? "flex-start" : "flex-end"}
@@ -106,20 +117,21 @@ const ChatComponent = () => {
                 </Box>
               </HStack>
             ))}
+            <div ref={messagesEndRef} />{" "}
           </Box>
           <HStack>
             <input
               placeholder="Type something..."
-              class="input"
+              className="input"
               name="text"
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
             />
-            <button class="sendbtn" onClick={sendMessage}>
-              <div class="svg-wrapper-1">
-                <div class="svg-wrapper">
+            <button className="sendbtn" onClick={sendMessage}>
+              <div className="svg-wrapper-1">
+                <div className="svg-wrapper">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
