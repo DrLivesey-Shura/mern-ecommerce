@@ -3,106 +3,88 @@ import { Box, VStack, HStack, Text, Flex, Container } from "@chakra-ui/react";
 import "./ChatStyle.css";
 import Layout from "../core/Layout";
 
-const AdminChatComponent = () => {
-  const [ws, setWs] = useState(null);
-  const [message, setMessage] = useState("");
+const ChatComponent = () => {
   const [messages, setMessages] = useState([]);
-  const [selectedUser, setSelectedUser] = useState("");
+  const [messageInput, setMessageInput] = useState("");
   const [uniqueUsers, setUniqueUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState("");
+  const messageEndRef = useRef(null);
+  const jwt = JSON.parse(localStorage.getItem("jwt"));
+  const username = jwt.user.username;
+  const ws = useRef(null);
+  const recipient = selectedUser;
+  let senderId = "";
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    fetchMessages();
-    const socket = new WebSocket(`ws://localhost:8000/ws/admin`);
-
-    socket.onopen = () => {
-      console.log("Connected to WebSocket");
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, data]);
-      setUniqueUsers((prevUsers) => getUniqueUsers([...prevUsers, data]));
-    };
-
-    socket.onclose = () => {
-      console.log("Disconnected from WebSocket");
-    };
-
-    setWs(socket);
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-    // fetchMessages();
-  }, [messages]);
-
-  useEffect(() => {
-    fetchMessages();
-  }, [selectedUser]);
-
-  const fetchMessages = async () => {
-    if (!selectedUser) return;
-
     try {
-      const response = await fetch("http://localhost:8000/admin/messages");
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-      const data = await response.json();
-      setMessages(data);
-      setUniqueUsers(getUniqueUsers(data));
-    } catch (error) {
-      console.error("Error fetching messages:", error.message);
+      ws.current = new WebSocket(`ws://localhost:8000/ws/${username}`);
+
+      const handleMessage = (message) => {
+        setMessages((prevMessages) => [...prevMessages, message]);
+        updateUniqueUsers(message);
+        scrollToBottom();
+      };
+
+      ws.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("DATA : ", data);
+          if (data["type"] === "connect") {
+            senderId = data["username"];
+          } else if (data["type"] === "disconnected") {
+            console.log("Disconnected", `Client ` + data["username"]);
+          } else {
+            handleMessage(data);
+          }
+        } catch (e) {
+          console.log(event.data);
+          console.error(e);
+        }
+      };
+
+      return () => {
+        ws.current.onmessage = null;
+        ws.current.close();
+      };
+    } catch (e) {
+      console.log("Failed to connect to websocket");
     }
+  }, [username]);
+
+  const updateUniqueUsers = (message) => {
+    setUniqueUsers((prevUsers) => {
+      const users = [
+        ...new Set([...prevUsers, message.sender, message.recipient]),
+      ];
+      return users.filter((user) => user !== username);
+    });
   };
 
   const sendMessage = () => {
-    if (ws && message && selectedUser) {
-      const msg = { recipient: selectedUser, message };
-      ws.send(JSON.stringify(msg));
+    if (messageInput.trim() === "") return;
 
-      // Update local state with the sent message
-      const sentMessage = {
-        sender: "admin",
-        recipient: selectedUser,
-        message,
-      };
-      setMessages((prevMessages) => [...prevMessages, sentMessage]);
+    const message = {
+      sender: username,
+      recipient: recipient,
+      content: messageInput,
+    };
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        setMessages((prevMessages) => [...prevMessages, data]);
-        setUniqueUsers((prevUsers) => getUniqueUsers([...prevUsers, data]));
-      };
-
-      setMessage("");
-    }
+    ws.current.send(JSON.stringify(message));
+    setMessageInput("");
   };
 
-  const getUniqueUsers = (messages) => {
-    const users = messages
-      .map((msg) => msg.sender)
-      .filter((user) => user !== "admin");
-    return [...new Set(users)];
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const getLastMessage = (user) => {
     const userMessages = messages.filter(
       (msg) => msg.sender === user || msg.recipient === user
     );
-    const lastMessage = userMessages[userMessages.length - 1];
-    if (!lastMessage) return "";
-    const prefix = lastMessage.sender === "admin" ? "You: " : "";
-    return `${prefix}${lastMessage.message}`;
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    return userMessages.length > 0
+      ? userMessages[userMessages.length - 1].content
+      : "";
   };
 
   return (
@@ -160,29 +142,32 @@ const AdminChatComponent = () => {
               {messages
                 .filter(
                   (msg) =>
-                    msg.sender === selectedUser ||
-                    msg.recipient === selectedUser
+                    (msg.sender === username &&
+                      msg.recipient === selectedUser) ||
+                    (msg.sender === selectedUser && msg.recipient === username)
                 )
                 .map((msg, index) => (
                   <HStack
                     key={index}
-                    justify={msg.sender === "admin" ? "flex-end" : "flex-start"}
+                    justify={
+                      msg.sender === username ? "flex-end" : "flex-start"
+                    }
                     my={2}
                   >
                     <Box
-                      bg={msg.sender === "admin" ? "#2196F3" : "#E0E0E0"}
+                      bg={msg.sender === username ? "#2196F3" : "#E0E0E0"}
                       color="black"
                       p={8}
                       borderRadius="16px"
                       maxW="100%"
                     >
                       <Text fontSize="16px" m={3}>
-                        {msg.message}
+                        {msg.content}
                       </Text>
                     </Box>
                   </HStack>
                 ))}
-              <div ref={messagesEndRef} />{" "}
+              <div ref={messagesEndRef} />
             </Flex>
             <HStack>
               <input
@@ -190,8 +175,8 @@ const AdminChatComponent = () => {
                 className="input"
                 name="text"
                 type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && sendMessage()}
               />
               <button className="sendbtn" onClick={sendMessage}>
@@ -221,4 +206,4 @@ const AdminChatComponent = () => {
   );
 };
 
-export default AdminChatComponent;
+export default ChatComponent;

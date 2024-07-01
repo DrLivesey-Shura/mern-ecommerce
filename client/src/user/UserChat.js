@@ -1,82 +1,62 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, VStack, HStack, Text } from "@chakra-ui/react";
 import Layout from "../core/Layout";
+import "../admin/ChatStyle.css";
 
 const ChatComponent = () => {
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const websocket = useRef(null);
+  const [messageInput, setMessageInput] = useState("");
+  const messageEndRef = useRef(null);
   const jwt = JSON.parse(localStorage.getItem("jwt"));
-  const user = jwt.user.username;
+  const username = jwt.user.username;
+  const ws = useRef(null);
   const messagesEndRef = useRef(null);
 
+  const recipient = "admin";
   useEffect(() => {
-    fetchMessages();
-    websocket.current = new WebSocket(`ws://localhost:8000/ws/${user}`);
+    try {
+      ws.current = new WebSocket(`ws://localhost:8000/ws/${username}`);
 
-    websocket.current.onopen = () => {
-      console.log("Connected to WebSocket");
+      ws.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("DATA : ", data);
+          setMessages((prevMessages) => [...prevMessages, data]);
+        } catch (e) {
+          console.log(event.data);
+          console.error(e);
+        }
+      };
+
+      return () => {
+        ws.current.onmessage = null;
+        ws.current.close();
+      };
+    } catch (e) {
+      console.log("Failed to connect to websocket");
+    }
+  }, [username]);
+
+  const sendMessage = () => {
+    if (messageInput.trim() === "") return;
+
+    const message = {
+      sender: username,
+      recipient: recipient,
+      content: messageInput,
     };
 
-    websocket.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, message]);
-    };
+    ws.current.send(JSON.stringify(message));
+    setMessageInput("");
+  };
 
-    websocket.current.onclose = () => {
-      console.log("Disconnected from WebSocket");
-    };
-
-    return () => {
-      websocket.current.close();
-    };
-  }, [user]);
+  const scrollToBottom = () => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // useEffect(() => {
-  //   fetchMessages();
-  // }, [messages]);
-
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch(`http://localhost:8000/messages/${user}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-      const data = await response.json();
-      setMessages(data);
-    } catch (error) {
-      console.error("Error fetching messages:", error.message);
-    }
-  };
-
-  const sendMessage = () => {
-    if (inputValue.trim() && websocket.current.readyState === WebSocket.OPEN) {
-      const message = {
-        recipient: "admin",
-        message: inputValue,
-      };
-      websocket.current.send(JSON.stringify(message));
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: user, recipient: "admin", message: inputValue },
-      ]);
-      websocket.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        setMessages((prevMessages) => [...prevMessages, message]);
-      };
-
-      setInputValue("");
-    }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
     <Layout title="Chat" description="" className="container-fluid">
@@ -100,23 +80,29 @@ const ChatComponent = () => {
             shadow="md"
             maxH="60vh"
           >
-            {messages.map((msg, index) => (
-              <HStack
-                key={index}
-                justify={msg.sender === "admin" ? "flex-start" : "flex-end"}
-                my={2}
-              >
-                <Box
-                  bg={msg.sender === "admin" ? "#E0E0E0" : "#2196F3"}
-                  color="black"
-                  px={13}
-                  borderRadius="12px"
-                  maxW="100%"
+            {messages
+              .filter(
+                (msg) =>
+                  (msg.sender === username && msg.recipient === "admin") ||
+                  (msg.sender === "admin" && msg.recipient === username)
+              )
+              .map((msg, index) => (
+                <HStack
+                  key={index}
+                  justify={msg.sender === "admin" ? "flex-start" : "flex-end"}
+                  my={2}
                 >
-                  <Text m={5}>{msg.message}</Text>
-                </Box>
-              </HStack>
-            ))}
+                  <Box
+                    bg={msg.sender === "admin" ? "#E0E0E0" : "#2196F3"}
+                    color="black"
+                    px={13}
+                    borderRadius="12px"
+                    maxW="100%"
+                  >
+                    <Text m={5}>{msg.content}</Text>
+                  </Box>
+                </HStack>
+              ))}
             <div ref={messagesEndRef} />{" "}
           </Box>
           <HStack>
@@ -125,8 +111,8 @@ const ChatComponent = () => {
               className="input"
               name="text"
               type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
             />
             <button className="sendbtn" onClick={sendMessage}>
