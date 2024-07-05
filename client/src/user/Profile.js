@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import Layout from '../core/Layout';
-import { isAuthenticated } from '../auth';
-import { Redirect } from 'react-router-dom';
-import { read, update, updateUser } from './apiUser';
+import React, { useState, useEffect } from "react";
+import Layout from "../core/Layout";
+import { isAuthenticated } from "../auth";
+import { Redirect } from "react-router-dom";
+import { read, update, updateUser } from "./apiUser";
 
 const Profile = ({ match }) => {
   const [values, setValues] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: "",
+    email: "",
+    password: "",
     error: false,
     success: false,
   });
 
   const { token } = isAuthenticated();
   const { name, email, password, success } = values;
+  const code = isAuthenticated().code;
 
   const init = (userId) => {
     // console.log(userId);
-    read(userId, token).then((data) => {
+    read(userId, token, code).then((data) => {
       if (data.error) {
         setValues({ ...values, error: true });
       } else {
@@ -28,7 +29,7 @@ const Profile = ({ match }) => {
   };
 
   useEffect(() => {
-    init(match.params.userId);
+    init(match.params.userId, code);
   }, []);
 
   const handleChange = (name) => (e) => {
@@ -37,7 +38,7 @@ const Profile = ({ match }) => {
 
   const clickSubmit = (e) => {
     e.preventDefault();
-    update(match.params.userId, token, { name, email, password }).then(
+    update(match.params.userId, token, { name, email, password }, code).then(
       (data) => {
         if (data.error) {
           // console.log(data.error);
@@ -58,41 +59,41 @@ const Profile = ({ match }) => {
 
   const redirectUser = (success) => {
     if (success) {
-      return <Redirect to='/user/dashboard' />;
+      return <Redirect to="/user/dashboard" />;
     }
   };
 
   const profileUpdate = (name, email, password) => (
     <form>
-      <div className='form-group'>
-        <label className='text-muted'>Name</label>
+      <div className="form-group">
+        <label className="text-muted">Name</label>
         <input
-          type='text'
-          onChange={handleChange('name')}
-          className='form-control'
+          type="text"
+          onChange={handleChange("name")}
+          className="form-control"
           value={name}
         />
       </div>
-      <div className='form-group'>
-        <label className='text-muted'>Email</label>
+      <div className="form-group">
+        <label className="text-muted">Email</label>
         <input
-          type='email'
-          onChange={handleChange('email')}
-          className='form-control'
+          type="email"
+          onChange={handleChange("email")}
+          className="form-control"
           value={email}
         />
       </div>
-      <div className='form-group'>
-        <label className='text-muted'>Password</label>
+      <div className="form-group">
+        <label className="text-muted">Password</label>
         <input
-          type='password'
-          onChange={handleChange('password')}
-          className='form-control'
+          type="password"
+          onChange={handleChange("password")}
+          className="form-control"
           value={password}
         />
       </div>
 
-      <button onClick={clickSubmit} className='btn btn-primary'>
+      <button onClick={clickSubmit} className="btn btn-primary">
         Submit
       </button>
     </form>
@@ -100,11 +101,11 @@ const Profile = ({ match }) => {
 
   return (
     <Layout
-      title='Profile'
-      description='Update your profile'
-      className='container-fluid'
+      title="Profile"
+      description="Update your profile"
+      className="container-fluid"
     >
-      <h2 className='mb-4'>Profile update</h2>
+      <h2 className="mb-4">Profile update</h2>
       {profileUpdate(name, email, password)}
       {redirectUser(success)}
     </Layout>

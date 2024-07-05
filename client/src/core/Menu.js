@@ -194,10 +194,7 @@ const MaterialAppBar = ({ history }) => {
               </Link>
             </MenuItem>
             <MenuItem>
-              <Link
-                style={isActive(history, "/user/chat")}
-                to="/user/dashboard"
-              >
+              <Link style={isActive(history, "/user/chat")} to="/user/chat">
                 <IconButton aria-label="Dashboard" color="inherit">
                   <ChatIcon />
                 </IconButton>

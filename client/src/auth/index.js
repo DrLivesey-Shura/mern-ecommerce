@@ -1,11 +1,11 @@
-import { API } from '../config';
+import { API } from "../config";
 
 export const signup = (user) => {
   return fetch(`${API}/signup`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
+      Accept: "application/json",
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(user),
   })
@@ -19,10 +19,10 @@ export const signup = (user) => {
 
 export const signin = (user) => {
   return fetch(`${API}/signin`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
+      Accept: "application/json",
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(user),
   })
@@ -35,32 +35,42 @@ export const signin = (user) => {
 };
 
 export const authenticate = (data, next) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('jwt', JSON.stringify(data));
+  if (typeof window !== "undefined") {
+    localStorage.setItem("jwt", JSON.stringify(data));
     next();
   }
 };
 
 export const signout = (next) => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('jwt');
-    next();
-    return fetch(`${API}/signout`, {
-      method: 'GET',
-    })
-      .then((response) => {
-        console.log('signout', response);
+  if (typeof window !== "undefined") {
+    const jwt = JSON.parse(localStorage.getItem("jwt"));
+    if (jwt) {
+      const token = jwt.token;
+      localStorage.removeItem("jwt");
+      next();
+      return fetch(`${API}/signout`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`, // Send the token in the Authorization header
+        },
       })
-      .catch((err) => console.log(err));
+        .then((response) => {
+          console.log("signout", response);
+        })
+        .catch((err) => console.log(err));
+    } else {
+      next();
+    }
   }
 };
 
 export const isAuthenticated = () => {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return false;
   }
-  if (localStorage.getItem('jwt')) {
-    return JSON.parse(localStorage.getItem('jwt'));
+  if (localStorage.getItem("jwt")) {
+    const user = JSON.parse(localStorage.getItem("jwt"));
+    return user;
   } else {
     return false;
   }

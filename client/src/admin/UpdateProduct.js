@@ -23,6 +23,8 @@ const UpdateProduct = ({ match }) => {
   const [categories, setCategories] = useState([]);
 
   const { user, token } = isAuthenticated();
+  const code = isAuthenticated().code;
+
   const {
     name,
     description,
@@ -49,7 +51,7 @@ const UpdateProduct = ({ match }) => {
           name: data.name,
           description: data.description,
           price: data.price,
-          category: data.category._id,
+          category: data.category.id,
           shipping: data.shipping,
           quantity: data.quantity,
           formData: new FormData(),
@@ -85,7 +87,7 @@ const UpdateProduct = ({ match }) => {
     event.preventDefault();
     setValues({ ...values, error: "", loading: true });
 
-    updateProduct(match.params.productId, user._id, token, formData).then(
+    updateProduct(match.params.productId, user.id, token, formData, code).then(
       (data) => {
         if (data.error) {
           setValues({ ...values, error: data.error });
@@ -156,7 +158,7 @@ const UpdateProduct = ({ match }) => {
           <option>Please select</option>
           {categories &&
             categories.map((c, i) => (
-              <option key={i} value={c._id}>
+              <option key={i} value={c.id}>
                 {c.name}
               </option>
             ))}
