@@ -1,10 +1,11 @@
-FROM node:14
+FROM node:16 AS build
 
-WORKDIR /usr/src/app
+WORKDIR /client
 
-COPY package*.json ./
+COPY package.json ./
+COPY package-lock.json ./
 
-RUN npm install
+RUN npm install --force
 
 COPY . .
 
@@ -12,7 +13,7 @@ RUN npm run build
 
 FROM nginx:alpine
 
-COPY --from=0 /usr/src/app/build /usr/share/nginx/html
+COPY --from=build /client/build /usr/share/nginx/html
 
 EXPOSE 80
 

@@ -1,56 +1,27 @@
 version: "3.8"
 
 services:
-  server-app:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    environment:
-      MONGO_URL: mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority
-    depends_on:
-      - mongo
-
-  react-frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-
   chat-server:
     build:
       context: ./chat-server
-      dockerfile: Dockerfile
+    container_name: chat-server
     ports:
       - "8000:8000"
     environment:
-      POSTGRES_DB: mydatabase
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      DATABASE_URL: postgresql+asyncpg://postgres:root@localhost/chatdb
-    depends_on:
-      - postgres
+      MONGO_DETAILS: "mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority"
 
-  mongo:
-    image: mongo:latest
+  react-client:
+    build:
+      context: ./client
+    container_name: react-client
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
+      - "3000:80"
 
-  postgres:
-    image: postgres:latest
+  node-server:
+    build:
+      context: ./server
+    container_name: node-server
     ports:
-      - "5432:5432"
+      - "5000:5000"
     environment:
-      POSTGRES_DB: chatdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-volumes:
-  mongo-data:
-  postgres-data:
+      MONGO_DETAILS: "mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority"

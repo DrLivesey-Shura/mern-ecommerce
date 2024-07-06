@@ -51,7 +51,7 @@ const UpdateProduct = ({ match }) => {
           name: data.name,
           description: data.description,
           price: data.price,
-          category: data.category.id,
+          category: data.category._id,
           shipping: data.shipping,
           quantity: data.quantity,
           formData: new FormData(),
@@ -86,8 +86,8 @@ const UpdateProduct = ({ match }) => {
   const clickSubmit = (event) => {
     event.preventDefault();
     setValues({ ...values, error: "", loading: true });
-
-    updateProduct(match.params.productId, user.id, token, formData, code).then(
+    console.log(user);
+    updateProduct(match.params.productId, user._id, token, formData, code).then(
       (data) => {
         if (data.error) {
           setValues({ ...values, error: data.error });
@@ -158,7 +158,7 @@ const UpdateProduct = ({ match }) => {
           <option>Please select</option>
           {categories &&
             categories.map((c, i) => (
-              <option key={i} value={c.id}>
+              <option key={i} value={c._id}>
                 {c.name}
               </option>
             ))}
