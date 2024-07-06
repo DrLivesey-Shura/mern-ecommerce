@@ -1,82 +1,46 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.future import select
-from sqlalchemy.orm import sessionmaker
-from database import SessionLocal, engine, init_db
-from models import Message
+from database import message_collection
+from models import MessageModel
+from connection_manager import ConnectionManager
 import json
-from dataclasses import dataclass
-import uuid
-
-
-@dataclass
-class ConnectionManager:
-    def __init__(self) -> None:
-        self.active_connections: dict = {}
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        username = str(uuid.uuid4())
-        self.active_connections[username] = websocket
-
-        await self.send_message_to(websocket, json.dumps({"type": "connect", "username": username}))
-
-    def disconnect(self, websocket: WebSocket):
-        username = self.find_connection_id(websocket)
-        del self.active_connections[username]
-        return username
-
-    def find_connection_id(self, websocket: WebSocket):
-        val_list = list(self.active_connections.values())
-        key_list = list(self.active_connections.keys())
-        username = val_list.index(websocket)
-        return key_list[username]
-
-    async def send_message_to(self, ws: WebSocket, message: str):
-        await ws.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections.values():
-            await connection.send_text(message)
-
+from bson import ObjectId
 
 app = FastAPI()
 
 connection_manager = ConnectionManager()
 
-# WebSocket endpoint to handle incoming connections
+def convert_objectid_to_str(message):
+    if '_id' in message:
+        message['_id'] = str(message['_id'])
+    return message
+
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
     await connection_manager.connect(websocket)
 
     try:
-        async with SessionLocal() as session:
-            # Fetch old messages from the database
-            result = await session.execute(select(Message).order_by(Message.id))
-            old_messages = result.scalars().all()
+        # Fetch old messages from MongoDB
+        old_messages = await message_collection.find().to_list(length=100)
+        for message in old_messages:
+            message = convert_objectid_to_str(message)
+            await connection_manager.send_message_to(websocket, json.dumps(message))
 
-            # Send old messages to the client
-            for message in old_messages:
-                message_data = {
-                    "sender": message.sender,
-                    "recipient": message.recipient,
-                    "content": message.content
-                }
-                await connection_manager.send_message_to(websocket, json.dumps(message_data))
+        while True:
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            sender = message_data.get("sender")
+            recipient = message_data.get("recipient")
+            content = message_data.get("content")
 
-            while True:
-                data = await websocket.receive_text()
-                print("Received: ", data)
-                message_data = json.loads(data)
-                sender = message_data.get("sender")
-                recipient = message_data.get("recipient")
-                content = message_data.get("content")
+            # Create a new message and insert it into MongoDB
+            new_message = MessageModel(sender=sender, recipient=recipient, content=content)
+            inserted_message = await message_collection.insert_one(new_message.dict(by_alias=True))
 
-                new_message = Message(sender=sender, recipient=recipient, content=content)
-                session.add(new_message)
-                await session.commit()
+            # Include the MongoDB generated ID in the message
+            message_with_id = new_message.dict(by_alias=True)
+            message_with_id['_id'] = str(inserted_message.inserted_id)
 
-                await connection_manager.broadcast(data)
+            await connection_manager.broadcast(json.dumps(message_with_id))
 
     except WebSocketDisconnect:
         username = connection_manager.disconnect(websocket)
@@ -89,12 +53,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         username = connection_manager.disconnect(websocket)
         await connection_manager.broadcast(f"Client #{username} left the chat")
 
-# Event handler to initialize the database on startup
-@app.on_event("startup")
-async def startup_event():
-    await init_db()
-
-# Main block to run the FastAPI application using Uvicorn
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

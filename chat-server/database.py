@@ -1,15 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from models import Base  # Absolute import
+from motor.motor_asyncio import AsyncIOMotorClient
 
-DATABASE_URL = "postgresql+asyncpg://postgres:root@localhost/chatdb"
+MONGO_DETAILS = "mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority" 
 
-engine = create_async_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+client = AsyncIOMotorClient(MONGO_DETAILS)
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
+database = client["test-store"]
+message_collection = database.get_collection("messages")

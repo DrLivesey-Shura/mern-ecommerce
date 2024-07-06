@@ -1,13 +1,33 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-from typing import List
+from pydantic import BaseModel, Field
+from typing import Optional
+from bson import ObjectId
 
-Base = declarative_base()
 
-class Message(Base):
-    __tablename__ = 'messages'
-    id = Column(Integer, primary_key=True, index=True)
-    sender = Column(String)
-    recipient = Column(String)
-    content = Column(String)
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field=None, config=None):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid objectid")
+        return ObjectId(v)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, schema, field):
+        schema.update(type="string")
+        return schema
+
+
+
+class MessageModel(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    sender: str
+    recipient: str
+    content: str
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
