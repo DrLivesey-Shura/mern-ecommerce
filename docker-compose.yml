@@ -2,8 +2,9 @@ version: "3.8"
 
 services:
   chat-server:
-    build:
-      context: ./chat-server
+    # build:
+    #   context: ./chat-server
+    image: mern-ecommerce-chat-server:latest
     container_name: chat-server
     ports:
       - "8000:8000"
@@ -11,15 +12,17 @@ services:
       MONGO_DETAILS: "mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority"
 
   react-client:
-    build:
-      context: ./client
+    # build:
+    #   context: ./client
+    image: mern-ecommerce-react-client:latest
     container_name: react-client
     ports:
       - "3000:80"
 
   node-server:
-    build:
-      context: ./server
+    # build:
+    #   context: ./server
+    image: mern-ecommerce-node-server:latest
     container_name: node-server
     ports:
       - "5000:5000"
