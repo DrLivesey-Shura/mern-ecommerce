@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Link, withRouter, forceUpdate } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import { signout, isAuthenticated } from "../auth";
 import { itemTotal } from "./cartHelpers";
 

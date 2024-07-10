@@ -1,20 +1,13 @@
-FROM node:16 AS build
+FROM node:22-alpine AS build
 
 WORKDIR /client
 
-COPY package.json ./
-COPY package-lock.json ./
-
-RUN npm install --force
-
 COPY . .
 
-RUN npm run build
+RUN yarn
 
-FROM nginx:alpine
+ENV REACT_APP_API_URL=localhost
 
-COPY --from=build /client/build /usr/share/nginx/html
+EXPOSE 5173
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "run", "dev"]

@@ -1,14 +1,8 @@
-/**
- * border radius
- */
-
 .btn,
 .jumbotron,
 .nav :hover {
   border-radius: 0px;
 }
-
-/* cart badge */
 
 .cart-badge,
 .cart-badge:hover {
@@ -18,9 +12,6 @@
   font-style: italic;
   background: #000;
 }
-/**
-  * single product page - product name
-  */
 
 .name {
   background: indigo;
@@ -28,7 +19,6 @@
   font-weight: bold;
 }
 
-/* black shade form 10-1 */
 .black-10 {
   background: #f2f2f2;
 }

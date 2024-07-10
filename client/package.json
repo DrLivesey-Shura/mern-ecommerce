@@ -1,50 +1,51 @@
 {
   "name": "client",
-  "version": "0.1.0",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
+    "@mui/material": "^5.16.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "braintree-web-drop-in-react": "^1.1.1",
-    "config": "^3.3.1",
+    "braintree-web-drop-in-react": "^1.2.1",
+    "config": "^3.3.12",
     "dotenv": "^16.4.5",
-    "fontsource-roboto": "^3.0.3",
-    "framer-motion": "^11.2.12",
-    "moment": "^2.27.0",
+    "fontsource-roboto": "^3.1.5",
+    "framer-motion": "^11.2.14",
+    "localforage": "^1.10.0",
+    "match-sorter": "^6.3.4",
+    "moment": "^2.30.1",
     "path-browserify": "^1.0.1",
-    "query-string": "^6.13.1",
+    "query-string": "^6.14.1",
     "react": "^18.3.1",
     "react-chat-engine-pretty": "^0.1.8",
     "react-dom": "^18.3.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.1",
+    "sort-by": "^1.2.0",
     "websocket": "^1.0.35"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "vite": "^5.3.1"
   }
 }
