@@ -39,7 +39,10 @@ app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(expressValidator());
-app.use(cors());
+
+app.use(cors({
+  origin: ['http://localhost:*'],
+}));
 
 // routes middleware
 app.use("/api", authRoutes);
