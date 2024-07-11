@@ -40,9 +40,11 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(expressValidator());
 
-app.use(cors({
-  origin: ['http://localhost:*'],
-}));
+app.use(
+  cors({
+    origin: [/^localhost:\d+$/],
+  })
+);
 
 // routes middleware
 app.use("/api", authRoutes);
