@@ -1,11 +1,17 @@
-FROM node:16
+FROM node:22-alpine AS build
 
 WORKDIR /server
+
+RUN RUN apk upgrade --update-cache --available 
+
+RUN apk add openssl
 
 COPY package.json ./
 COPY package-lock.json ./
 
 RUN npm install
+
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./selfsigned.key -out selfsigned.crt
 
 COPY . .
 
