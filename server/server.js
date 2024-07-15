@@ -6,7 +6,18 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
 const expressValidator = require("express-validator");
+const https = require('https');
 require("dotenv").config();
+
+// add SSL
+// sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./selfsigned.key -out selfsigned.crt
+var key = fs.readFileSync(__dirname + './certs/selfsigned.key');
+var cert = fs.readFileSync(__dirname + './certs/selfsigned.crt');
+var options = {
+  key: key,
+  cert: cert
+};
+
 // import routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
@@ -64,6 +75,6 @@ if (process.env.NODE_ENV === "production") {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+https.createServer(options, app).listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
