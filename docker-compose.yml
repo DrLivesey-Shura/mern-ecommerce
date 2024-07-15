@@ -2,9 +2,7 @@ version: "3.8"
 
 services:
   chat-server:
-    # build:
-    #   context: ./chat-server
-    image: mern-ecommerce-chat-server:latest
+    image: drlivesey23/chat-server:latest
     container_name: chat-server
     ports:
       - "8000:8000"
@@ -12,17 +10,15 @@ services:
       MONGO_DETAILS: "mongodb+srv://admin:28052002@alaeddineapi.kxaujo9.mongodb.net/test-store?retryWrites=true&w=majority"
 
   react-client:
-    # build:
-    #   context: ./client
-    image: mern-ecommerce-react-client:latest
+    image: drlivesey23/logan_summer_project_1_vite_client:latest
     container_name: react-client
+    environment:
+      - VITE_REACT_APP_API_URL=localhost:5000/api
     ports:
-      - "3000:80"
+      - "192.168.1.145:30001:9999"
 
   node-server:
-    # build:
-    #   context: ./server
-    image: mern-ecommerce-node-server:latest
+    image: drlivesey23/logan_summer_project_1_server:latest
     container_name: node-server
     ports:
       - "5000:5000"
