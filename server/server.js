@@ -6,16 +6,17 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
 const expressValidator = require("express-validator");
-const https = require('https');
+const https = require("https");
 require("dotenv").config();
+const fs = require("fs");
 
 // add SSL
 // sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./selfsigned.key -out selfsigned.crt
-var key = fs.readFileSync(__dirname + './certs/selfsigned.key');
-var cert = fs.readFileSync(__dirname + './certs/selfsigned.crt');
+var key = fs.readFileSync(path.join(__dirname, "certs", "selfsigned.key"));
+var cert = fs.readFileSync(path.join(__dirname, "certs", "selfsigned.crt"));
 var options = {
   key: key,
-  cert: cert
+  cert: cert,
 };
 
 // import routes
@@ -35,6 +36,7 @@ const connectDB = async () => {
     .connect(process.env.MONGO_DB_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      useCreateIndex: true,
     })
     .then((response) => {
       console.log("MongoDB Connection Succeeded.");
@@ -51,11 +53,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(expressValidator());
 
-app.use(
-  cors({
-    origin: [/^localhost:\d+$/],
-  })
-);
+app.use(cors());
 
 // routes middleware
 app.use("/api", authRoutes);
