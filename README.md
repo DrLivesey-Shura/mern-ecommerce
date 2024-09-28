@@ -1,5 +1,3 @@
-Here's a suggested `README.md` description for your project:
-
 ---
 
 # MERN E-commerce Website with Braintree Payments & Chat Feature
